@@ -33,9 +33,20 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Prisma SQLite (local only, Supabase dipakai di production)
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+
+# Log files
+*.log
+prisma_push_log.txt
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
