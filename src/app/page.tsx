@@ -1,5 +1,6 @@
 // INI ADALAH SERVER COMPONENT - Tidak boleh ada "use client"
 // Prisma hanya boleh dipakai di sini (server side)
+export const dynamic = 'force-dynamic';
 
 import { Search, ShoppingBag, Phone, Menu } from 'lucide-react';
 import Image from 'next/image';

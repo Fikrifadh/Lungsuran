@@ -1,4 +1,5 @@
 // Server Component — ambil data produk dari database berdasarkan ID dari URL
+export const dynamic = 'force-dynamic';
 import prisma from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';

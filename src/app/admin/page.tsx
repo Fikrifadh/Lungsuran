@@ -1,4 +1,6 @@
 // Server Component — ambil data dari database
+export const dynamic = 'force-dynamic';
+
 import { 
   LayoutDashboard, Package, Layers, Settings, LogOut, Plus, CheckCircle2, Clock, TrendingUp
 } from 'lucide-react';

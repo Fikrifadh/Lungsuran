@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import prisma from "@/lib/db";
 import Link from "next/link";
 import { LayoutDashboard, Package, Layers, Settings, LogOut } from "lucide-react";
