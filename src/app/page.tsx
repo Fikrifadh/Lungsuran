@@ -14,15 +14,36 @@ function formatRupiah(price: number) {
 
 export default async function Home() {
   // Ambil data dari database (server side)
-  const [categories, products, phoneRow, msgRow] = await Promise.all([
-    prisma.category.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } }),
-    prisma.product.findMany({ take: 12, orderBy: { createdAt: 'desc' }, include: { category: true } }),
-    prisma.setting.findUnique({ where: { key: 'wa_phone' } }),
-    prisma.setting.findUnique({ where: { key: 'wa_message_template' } }),
-  ]);
+  let categories = [];
+  let products = [];
+  let waPhone = '6281234567890';
+  let waTemplate = 'Halo Admin Lungsuran! Saya tertarik dengan produk *{nama_produk}* seharga *{harga}*. Apakah masih tersedia?';
 
-  const waPhone = phoneRow?.value || '6281234567890';
-  const waTemplate = msgRow?.value || 'Halo Admin Lungsuran! Saya tertarik dengan produk *{nama_produk}* seharga *{harga}*. Apakah masih tersedia?';
+  try {
+    const [catData, prodData, phoneRow, msgRow] = await Promise.all([
+      prisma.category.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } }),
+      prisma.product.findMany({ take: 12, orderBy: { createdAt: 'desc' }, include: { category: true } }),
+      prisma.setting.findUnique({ where: { key: 'wa_phone' } }),
+      prisma.setting.findUnique({ where: { key: 'wa_message_template' } }),
+    ]);
+    categories = catData;
+    products = prodData;
+    if (phoneRow) waPhone = phoneRow.value;
+    if (msgRow) waTemplate = msgRow.value;
+  } catch (err: any) {
+    return (
+      <div className="p-10 bg-red-50 text-red-900 font-mono text-sm border-2 border-red-200 rounded-xl m-10">
+        <h1 className="text-xl font-bold mb-4">Database Connection Error</h1>
+        <p className="mb-4">Terjadi kesalahan saat menghubungkan ke database:</p>
+        <pre className="bg-red-100 p-4 rounded overflow-auto max-h-96">
+          {err.message || 'Unknown error'}
+          {"\n\nStack:\n"}
+          {err.stack}
+        </pre>
+        <p className="mt-4 text-xs">Coba periksa Environment Variables di Dashboard Vercel.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">

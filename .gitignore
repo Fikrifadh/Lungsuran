@@ -52,3 +52,5 @@ next-env.d.ts
 # Generated Prisma client - DO commit this for Vercel deployment
 # /src/generated/prisma
 
+
+.vercel
