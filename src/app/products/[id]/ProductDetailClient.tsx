@@ -22,14 +22,15 @@ export default function ProductDetailClient({ images, productName, status }: Pro
       {/* Gambar Utama */}
       <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-slate-100 group shadow-inner">
         {hasImages ? (
-          <Image
-            src={images[activeIndex]}
-            alt={`${productName} - foto ${activeIndex + 1}`}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover transition-opacity duration-300"
-            priority
-          />
+            <Image
+              src={images[activeIndex]}
+              alt={`${productName} - foto ${activeIndex + 1}`}
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover transition-opacity duration-300"
+              priority
+              unoptimized={true}
+            />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-slate-300">
             <span className="text-7xl">📦</span>
@@ -91,7 +92,7 @@ export default function ProductDetailClient({ images, productName, status }: Pro
                   : 'border-slate-200 hover:border-slate-300'
               }`}
             >
-              <Image src={img} alt={`Thumbnail ${idx + 1}`} fill sizes="80px" className="object-cover" />
+              <Image src={img} alt={`Thumbnail ${idx + 1}`} fill sizes="80px" className="object-cover" unoptimized={true} />
             </button>
           ))}
         </div>
