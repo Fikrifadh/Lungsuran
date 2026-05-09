@@ -27,21 +27,41 @@ export default function NewProduct() {
     setSelectedCategory(value);
   };
 
-  // Upload dari file lokal — simpan sebagai blob URL untuk preview
+  // Upload dari file lokal — simpan sebagai preview dan pertahankan file untuk upload permanen
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 5) { alert('Maksimal 5 foto'); return; }
-    const newUrls = files.map(f => URL.createObjectURL(f));
-    setImages(prev => [...prev, ...newUrls]);
+    const newPreviews = files.map(f => ({ src: URL.createObjectURL(f), file: f }));
+    setImages(prev => [...prev, ...newPreviews.map(p => p.src)]);
+    // Simpan file ke FormData melalui input tersembunyi (name="images") otomatis oleh form
+    // (input already memiliki attribute name="images" dan multiple)
     e.target.value = '';
+  };
+
+  // Helper untuk mengubah link sharing OneDrive menjadi direct image link
+  const transformOneDriveUrl = (url: string) => {
+    if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+      try {
+        // Encode URL ke Base64 (tanpa padding)
+        const base64Value = btoa(url).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        return `https://api.onedrive.com/v1.0/shares/u!${base64Value}/root/content`;
+      } catch (e) {
+        return url;
+      }
+    }
+    return url;
   };
 
   // Tambah via URL eksternal
   const handleAddUrl = () => {
-    const url = urlInput.trim();
+    let url = urlInput.trim();
     if (!url) return;
     if (!url.startsWith('http')) { alert('URL harus diawali http:// atau https://'); return; }
     if (images.length >= 5) { alert('Maksimal 5 foto'); return; }
+    
+    // Transformasi jika itu link OneDrive
+    url = transformOneDriveUrl(url);
+
     setImages(prev => [...prev, url]);
     setBrokenImages(prev => { const n = new Set(prev); n.delete(images.length); return n; });
     setUrlInput('');

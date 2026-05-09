@@ -48,10 +48,24 @@ export default function EditProductForm({ product, categories }: Props) {
     e.target.value = '';
   };
 
-  // Tambah foto dari URL eksternal (Unsplash, dll)
+  // Helper untuk mengubah link sharing OneDrive menjadi direct image link
+  const transformOneDriveUrl = (url: string) => {
+    if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+      try {
+        // Encode URL ke Base64 (tanpa padding) sesuai spek OneDrive API
+        const base64Value = btoa(url).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        return `https://api.onedrive.com/v1.0/shares/u!${base64Value}/root/content`;
+      } catch (e) {
+        return url;
+      }
+    }
+    return url;
+  };
+
   const handleAddUrl = () => {
     const trimmed = urlInput.trim();
     if (!trimmed) return;
+    // Ensure URL starts with proper protocol
     if (!trimmed.startsWith('http')) {
       alert('URL harus diawali dengan http:// atau https://');
       return;
@@ -60,7 +74,9 @@ export default function EditProductForm({ product, categories }: Props) {
       alert('Maksimal 5 foto');
       return;
     }
-    setImages(prev => [...prev, trimmed]);
+    // Convert OneDrive share links to direct download URLs
+    const finalUrl = transformOneDriveUrl(trimmed);
+    setImages(prev => [...prev, finalUrl]);
     setUrlInput('');
     setShowUrlInput(false);
   };
@@ -69,7 +85,9 @@ export default function EditProductForm({ product, categories }: Props) {
     e.preventDefault();
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
-    formData.set('imageUrls', images.join(','));
+    // Filter out temporary blob URLs from local previews; keep only permanent URLs
+    const permanentImages = images.filter((img) => !img.startsWith('blob:'));
+    formData.set('imageUrls', permanentImages.join(','));
     try {
       await updateProduct(product.id, formData);
       setSuccess(true);
