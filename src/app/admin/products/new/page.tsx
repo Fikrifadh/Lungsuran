@@ -155,7 +155,7 @@ export default function NewProduct() {
                       fill
                       sizes="120px"
                       className="object-cover"
-                      unoptimized={img.startsWith('blob:')}
+                      unoptimized={true}
                       onError={() => setBrokenImages(prev => new Set(prev).add(idx))}
                     />
                   )}

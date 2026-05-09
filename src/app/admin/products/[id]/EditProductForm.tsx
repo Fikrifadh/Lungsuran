@@ -29,11 +29,18 @@ export default function EditProductForm({ product, categories }: Props) {
   const [success, setSuccess] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hapus foto dari daftar
-  const removeImage = (index: number) =>
+  const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+    setBrokenImages(prev => {
+      const n = new Set<number>();
+      prev.forEach(i => { if (i < index) n.add(i); else if (i > index) n.add(i - 1); });
+      return n;
+    });
+  };
 
   // Tambah foto dari file lokal — buat object URL untuk preview
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,15 +145,22 @@ export default function EditProductForm({ product, categories }: Props) {
                   key={idx}
                   className="relative aspect-square rounded-2xl overflow-hidden group border-2 border-slate-100 bg-slate-50"
                 >
-                  <Image
-                    src={img}
-                    alt={`Foto ${idx + 1}`}
-                    fill
-                    sizes="120px"
-                    className="object-cover"
-                    // Supaya object URL bisa ditampilkan
-                    unoptimized={img.startsWith('blob:')}
-                  />
+                  {brokenImages.has(idx) ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-300 text-center p-2">
+                      <span className="text-xl">⚠️</span>
+                      <span className="text-[9px] font-bold">Link gambar tidak bisa diakses</span>
+                    </div>
+                  ) : (
+                    <Image
+                      src={img}
+                      alt={`Foto ${idx + 1}`}
+                      fill
+                      sizes="120px"
+                      className="object-cover"
+                      unoptimized={true}
+                      onError={() => setBrokenImages(prev => new Set(prev).add(idx))}
+                    />
+                  )}
                   {/* Tombol hapus — muncul saat hover */}
                   <button
                     type="button"
