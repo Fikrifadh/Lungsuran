@@ -27,28 +27,37 @@ export default function NewProduct() {
     setSelectedCategory(value);
   };
 
-  // Upload dari file lokal — simpan sebagai preview dan pertahankan file untuk upload permanen
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload dari file lokal — konversi ke Base64 agar tersimpan permanen di database
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 5) { alert('Maksimal 5 foto'); return; }
-    const newPreviews = files.map(f => ({ src: URL.createObjectURL(f), file: f }));
-    setImages(prev => [...prev, ...newPreviews.map(p => p.src)]);
-    // Simpan file ke FormData melalui input tersembunyi (name="images") otomatis oleh form
-    // (input already memiliki attribute name="images" dan multiple)
+    
+    for (const f of files) {
+      if (f.size > 2.5 * 1024 * 1024) {
+        alert(`Ukuran ${f.name} terlalu besar (maks 2.5MB). Harap kompres foto Anda.`);
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImages(prev => [...prev, base64String]);
+      };
+      reader.readAsDataURL(f);
+    }
+    
     e.target.value = '';
   };
 
-  // Helper untuk mengubah link sharing OneDrive menjadi direct image link
+  // Helper menggunakan proxy internal untuk mem-bypass batasan CORS/HTML Viewer SharePoint & OneDrive
   const transformOneDriveUrl = (url: string) => {
-    if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
-      try {
-        // Encode URL ke Base64 (tanpa padding)
-        const base64Value = btoa(url).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        return `https://api.onedrive.com/v1.0/shares/u!${base64Value}/root/content`;
-      } catch (e) {
-        return url;
-      }
+    // Jika sudah proxy, biarkan
+    if (url.startsWith('/api/proxy-image')) return url;
+
+    // 1. Cek SharePoint / OneDrive
+    if (url.includes('sharepoint.com') || url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
     }
+
     return url;
   };
 
@@ -56,10 +65,17 @@ export default function NewProduct() {
   const handleAddUrl = () => {
     let url = urlInput.trim();
     if (!url) return;
-    if (!url.startsWith('http')) { alert('URL harus diawali http:// atau https://'); return; }
+    
+    // Auto fix if user pasted embed code instead of link
+    if (url.includes('<iframe')) {
+      const match = url.match(/src="([^"]+)"/);
+      if (match) url = match[1];
+    }
+
+    if (!url.startsWith('http') && !url.startsWith('/api/')) { alert('URL harus diawali http:// atau https://'); return; }
     if (images.length >= 5) { alert('Maksimal 5 foto'); return; }
     
-    // Transformasi jika itu link OneDrive
+    // Transformasi jika itu link OneDrive / SharePoint
     url = transformOneDriveUrl(url);
 
     setImages(prev => [...prev, url]);
@@ -80,10 +96,10 @@ export default function NewProduct() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Filter gambar blob (tidak bisa disimpan ke DB) — hanya simpan URL https
-    const validImages = images.filter(img => img.startsWith('http'));
+    // Filter gambar yang valid untuk disimpan ke DB (URL eksternal, proxy, atau Base64)
+    const validImages = images.filter(img => img.startsWith('http') || img.startsWith('/api/') || img.startsWith('data:image/'));
     if (validImages.length === 0 && images.length > 0) {
-      alert('Harap tambahkan gambar via URL (bukan upload file lokal) agar tersimpan permanen. Gunakan tombol "URL Gambar".');
+      alert('Terdapat gambar yang tidak valid.');
       setIsLoading(false);
       return;
     }
@@ -134,9 +150,12 @@ export default function NewProduct() {
             </div>
 
             {/* Panduan penting */}
-            <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 font-medium">
-              💡 <strong>Gunakan tombol "URL Gambar"</strong> agar foto tersimpan permanen di katalog. 
-              Upload file lokal hanya untuk preview sementara.
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs sm:text-sm text-blue-800 font-medium">
+              💡 <strong>Sekarang Anda bisa langsung Upload File lokal!</strong> Foto akan tersimpan permanen secara otomatis (Maks. 2.5MB per foto). 
+              <br />
+              <span className="text-[10px] opacity-75 leading-tight block mt-1">
+                Atau Anda juga tetap bisa menggunakan tombol <strong>URL Gambar</strong> untuk menyalin link dari internet/OneDrive.
+              </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
@@ -168,11 +187,7 @@ export default function NewProduct() {
                       UTAMA
                     </div>
                   )}
-                  {img.startsWith('blob:') && (
-                    <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-amber-500 text-white text-[9px] font-black rounded">
-                      PREVIEW
-                    </div>
-                  )}
+
                 </div>
               ))}
 

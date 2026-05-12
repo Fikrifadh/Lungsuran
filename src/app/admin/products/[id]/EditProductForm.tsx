@@ -42,38 +42,56 @@ export default function EditProductForm({ product, categories }: Props) {
     });
   };
 
-  // Tambah foto dari file lokal — buat object URL untuk preview
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Tambah foto dari file lokal — konversi ke Base64 agar tersimpan permanen
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 5) {
       alert('Maksimal 5 foto');
       return;
     }
-    const newUrls = files.map(f => URL.createObjectURL(f));
-    setImages(prev => [...prev, ...newUrls]);
+    
+    for (const f of files) {
+      if (f.size > 2.5 * 1024 * 1024) {
+        alert(`Ukuran ${f.name} terlalu besar (maks 2.5MB). Harap kompres foto Anda.`);
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImages(prev => [...prev, base64String]);
+      };
+      reader.readAsDataURL(f);
+    }
+    
     // Reset file input agar bisa pilih file lagi
     e.target.value = '';
   };
 
-  // Helper untuk mengubah link sharing OneDrive menjadi direct image link
+  // Helper menggunakan proxy internal untuk mem-bypass batasan CORS/HTML Viewer SharePoint & OneDrive
   const transformOneDriveUrl = (url: string) => {
-    if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
-      try {
-        // Encode URL ke Base64 (tanpa padding) sesuai spek OneDrive API
-        const base64Value = btoa(url).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        return `https://api.onedrive.com/v1.0/shares/u!${base64Value}/root/content`;
-      } catch (e) {
-        return url;
-      }
+    // Jika sudah proxy, biarkan
+    if (url.startsWith('/api/proxy-image')) return url;
+
+    // 1. Cek SharePoint / OneDrive
+    if (url.includes('sharepoint.com') || url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
     }
+
     return url;
   };
 
   const handleAddUrl = () => {
-    const trimmed = urlInput.trim();
-    if (!trimmed) return;
+    let url = urlInput.trim();
+    if (!url) return;
+
+    // Auto fix if user pasted embed code instead of link
+    if (url.includes('<iframe')) {
+      const match = url.match(/src="([^"]+)"/);
+      if (match) url = match[1];
+    }
+
     // Ensure URL starts with proper protocol
-    if (!trimmed.startsWith('http')) {
+    if (!url.startsWith('http') && !url.startsWith('/api/')) {
       alert('URL harus diawali dengan http:// atau https://');
       return;
     }
@@ -82,7 +100,7 @@ export default function EditProductForm({ product, categories }: Props) {
       return;
     }
     // Convert OneDrive share links to direct download URLs
-    const finalUrl = transformOneDriveUrl(trimmed);
+    const finalUrl = transformOneDriveUrl(url);
     setImages(prev => [...prev, finalUrl]);
     setUrlInput('');
     setShowUrlInput(false);
@@ -92,8 +110,8 @@ export default function EditProductForm({ product, categories }: Props) {
     e.preventDefault();
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
-    // Filter out temporary blob URLs from local previews; keep only permanent URLs
-    const permanentImages = images.filter((img) => !img.startsWith('blob:'));
+    // Hanya simpan URL yang valid (termasuk http, /api/, dan base64 data:image)
+    const permanentImages = images.filter((img) => img.startsWith('http') || img.startsWith('/api/') || img.startsWith('data:image/'));
     formData.set('imageUrls', permanentImages.join(','));
     try {
       await updateProduct(product.id, formData);
