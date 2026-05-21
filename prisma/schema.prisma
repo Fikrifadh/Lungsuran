@@ -9,12 +9,12 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  username      String    @unique
-  password      String
-  role          String    @default("ADMIN")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  password  String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String   @unique
 }
 
 model Category {
@@ -22,8 +22,8 @@ model Category {
   name      String    @unique
   slug      String    @unique
   isActive  Boolean   @default(true)
-  products  Product[]
   createdAt DateTime  @default(now())
+  products  Product[]
 }
 
 model Product {
@@ -31,16 +31,16 @@ model Product {
   name        String
   description String
   price       Float
-  status      String   @default("AVAILABLE") // AVAILABLE, SOLD
-  images      String   
-  category    Category @relation(fields: [categoryId], references: [id])
+  status      String   @default("AVAILABLE")
+  images      String
   categoryId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  category    Category @relation(fields: [categoryId], references: [id])
 }
 
 model Setting {
-  id        String @id @default(cuid())
-  key       String @unique
-  value     String
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
 }

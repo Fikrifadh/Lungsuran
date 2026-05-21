@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Pencil, Trash2, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { deleteProduct, updateProductStatus } from './products/actions';
+import { parseImages } from '@/lib/image-utils';
 
 type Product = {
   id: string;
@@ -86,7 +87,8 @@ export default function ProductActionsTable({ products: initialProducts }: { pro
             </thead>
             <tbody className="divide-y divide-slate-100">
               {products.map((p) => {
-                const firstImage = p.images ? p.images.split(',')[0].trim() : '';
+                const parsedImages = parseImages(p.images);
+                const firstImage = parsedImages.length > 0 ? parsedImages[0] : '';
                 const isThisLoading = loadingId === p.id;
                 const isConfirmingDelete = confirmDeleteId === p.id;
 
@@ -97,7 +99,7 @@ export default function ProductActionsTable({ products: initialProducts }: { pro
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden relative shrink-0 border border-slate-200">
                           {firstImage ? (
-                            <Image src={firstImage} alt={p.name} fill sizes="48px" className="object-cover" />
+                            <Image src={firstImage} alt={p.name} fill sizes="48px" className="object-cover" unoptimized={true} />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-xl">📦</div>
                           )}

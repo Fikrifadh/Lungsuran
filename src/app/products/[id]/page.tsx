@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, ShieldCheck, Share2 } from 'lucide-react';
 import ProductDetailClient from './ProductDetailClient';
+import { parseImages } from '@/lib/image-utils';
 
 function formatRupiah(price: number) {
   return 'Rp ' + price.toLocaleString('id-ID');
@@ -42,9 +43,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const waPhone = phoneRow?.value || '6281234567890';
   const waTemplate = msgRow?.value || 'Halo Admin Lungsuran! 👋\n\nSaya tertarik dengan produk *{nama_produk}* seharga *{harga}*.\n\nApakah masih tersedia? Terima kasih!';
 
-  const images = product.images
-    ? product.images.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
+  const images = parseImages(product.images);
 
   const waMessage = encodeURIComponent(
     waTemplate
@@ -170,7 +169,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {related.map(rel => {
-                const relImage = rel.images ? rel.images.split(',')[0].trim() : '';
+                const relParsedImages = parseImages(rel.images);
+                const relImage = relParsedImages.length > 0 ? relParsedImages[0] : '';
                 return (
                   <Link
                     key={rel.id}

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { ArrowLeft, Save, Tag, DollarSign, Type, Info, CheckCircle2, Upload, X, Link2 } from 'lucide-react';
 import Image from 'next/image';
 import { updateProduct } from '../actions';
+import { parseImages } from '@/lib/image-utils';
 
 type Props = {
   product: {
@@ -20,9 +21,7 @@ type Props = {
 };
 
 export default function EditProductForm({ product, categories }: Props) {
-  const existingImages = product.images
-    ? product.images.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
+  const existingImages = parseImages(product.images);
 
   const [images, setImages] = useState<string[]>(existingImages);
   const [isLoading, setIsLoading] = useState(false);
@@ -112,7 +111,7 @@ export default function EditProductForm({ product, categories }: Props) {
     const formData = new FormData(e.currentTarget);
     // Hanya simpan URL yang valid (termasuk http, /api/, dan base64 data:image)
     const permanentImages = images.filter((img) => img.startsWith('http') || img.startsWith('/api/') || img.startsWith('data:image/'));
-    formData.set('imageUrls', permanentImages.join(','));
+    formData.set('imageUrls', permanentImages.join('|'));
     try {
       await updateProduct(product.id, formData);
       setSuccess(true);

@@ -6,6 +6,7 @@ import { Search, ShoppingBag, Phone, Menu } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import prisma from '@/lib/db';
+import { parseImages } from '@/lib/image-utils';
 
 // Fungsi format harga Rupiah
 function formatRupiah(price: number) {
@@ -131,7 +132,8 @@ export default async function Home() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {products.map((product) => {
-                const firstImage = product.images ? product.images.split(',')[0].trim() : '';
+                const parsedImages = parseImages(product.images);
+                const firstImage = parsedImages.length > 0 ? parsedImages[0] : '';
                 const waMessage = encodeURIComponent(
                   waTemplate
                     .replace('{nama_produk}', product.name)

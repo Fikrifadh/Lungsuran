@@ -96,6 +96,7 @@ export default function NewProduct() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    const formData = new FormData(e.currentTarget);
     // Filter gambar yang valid untuk disimpan ke DB (URL eksternal, proxy, atau Base64)
     const validImages = images.filter(img => img.startsWith('http') || img.startsWith('/api/') || img.startsWith('data:image/'));
     if (validImages.length === 0 && images.length > 0) {
@@ -103,8 +104,7 @@ export default function NewProduct() {
       setIsLoading(false);
       return;
     }
-    const formData = new FormData(e.currentTarget);
-    formData.set('imageUrls', validImages.join(','));
+    formData.set('imageUrls', validImages.join('|'));
     if (isCustomCategory) formData.set('customCategory', customCategory);
     try {
       await createProduct(formData);

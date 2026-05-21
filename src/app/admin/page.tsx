@@ -2,13 +2,16 @@
 export const dynamic = 'force-dynamic';
 
 import { 
-  LayoutDashboard, Package, Layers, Settings, LogOut, Plus, CheckCircle2, Clock, TrendingUp
+  LayoutDashboard, Package, Layers, Settings, LogOut, Plus, CheckCircle2, Clock, TrendingUp, Users
 } from 'lucide-react';
 import prisma from '@/lib/db';
 import Link from 'next/link';
 import ProductActionsTable from './ProductActionsTable';
+import LogoutButton from './LogoutButton';
+import { getServerSession } from 'next-auth/next';
 
 export default async function AdminDashboard() {
+  const session = await getServerSession();
   const [products, categories] = await Promise.all([
     prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
@@ -51,15 +54,19 @@ export default async function AdminDashboard() {
           </Link>
 
           <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-8 mb-3 px-2">Sistem</p>
+          <Link href="/admin/users" className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl font-medium transition-all text-white/80">
+            <Users className="w-5 h-5" /> Manajemen Tim
+          </Link>
           <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl font-medium transition-all text-white/80">
             <Settings className="w-5 h-5" /> Pengaturan WA
           </Link>
         </nav>
 
-        <div className="p-4 border-t border-white/10">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 w-full text-red-300 hover:text-red-100 hover:bg-red-900/20 rounded-xl font-medium transition-all">
-            <LogOut className="w-5 h-5" /> Keluar ke Katalog
+        <div className="p-4 border-t border-white/10 space-y-2">
+          <Link href="/" className="flex items-center justify-center gap-2 px-4 py-2 w-full text-white/80 hover:bg-white/10 rounded-xl font-medium transition-all text-sm">
+             Lihat Katalog Publik
           </Link>
+          <LogoutButton />
         </div>
       </aside>
 
@@ -69,7 +76,7 @@ export default async function AdminDashboard() {
         <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
           <div>
             <h1 className="text-2xl font-black text-slate-800">Dashboard Lungsuran</h1>
-            <p className="text-slate-500 text-sm">Selamat datang kembali, admin!</p>
+            <p className="text-slate-500 text-sm">Selamat datang kembali, {session?.user?.email || 'admin'}!</p>
           </div>
           <Link
             href="/admin/products/new"

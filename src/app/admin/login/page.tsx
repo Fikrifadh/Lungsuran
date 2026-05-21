@@ -1,20 +1,31 @@
 "use client";
 
 import { useState } from 'react';
-import { Lock, User, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ShoppingBag, ArrowRight } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 export default function AdminLogin() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulasi login sederhana untuk 1 akun
-    if (username === 'admin' && password === 'badr123') {
-      window.location.href = '/admin';
+    setIsLoading(true);
+    setError('');
+
+    const res = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (res?.error) {
+      setError(res.error);
+      setIsLoading(false);
     } else {
-      setError('Username atau password salah!');
+      window.location.href = '/admin';
     }
   };
 
@@ -40,14 +51,14 @@ export default function AdminLogin() {
             )}
             
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Username</label>
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#00519E] transition-colors" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#00519E] transition-colors" />
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Masukkan username"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Masukkan email"
                   className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-[#00519E] focus:bg-white transition-all font-medium"
                   required
                 />
@@ -71,10 +82,11 @@ export default function AdminLogin() {
 
             <button
               type="submit"
-              className="w-full bg-[#00519E] text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:bg-[#003d76] transition-all shadow-lg shadow-blue-100 active:scale-95 group"
+              disabled={isLoading}
+              className="w-full bg-[#00519E] text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:bg-[#003d76] transition-all shadow-lg shadow-blue-100 active:scale-95 group disabled:opacity-70"
             >
-              Masuk Sekarang
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              {isLoading ? 'Memproses...' : 'Masuk Sekarang'}
+              {!isLoading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
         </div>
